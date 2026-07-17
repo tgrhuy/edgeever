@@ -1,5 +1,5 @@
 # EdgeEver
-
+11
 [简体中文](README.zh-CN.md) | English
 
 > **EdgeEver: A serverless, 100% free, open-source, and AI-native self-hosted Evernote alternative on Cloudflare.**
