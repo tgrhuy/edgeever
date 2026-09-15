@@ -1,0 +1,25 @@
+{
+  "name": "@edgeever/desktop",
+  "version": "1.73.0",
+  "desktopName": "EdgeEver",
+  "private": true,
+  "description": "Native EdgeEver desktop client",
+  "author": "EdgeEver contributors",
+  "type": "module",
+  "main": "src/main/index.mjs",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "dist": "electron-builder --config electron-builder.yml",
+    "verify-origin-migration": "electron ../../scripts/renderer-origin-verifier"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@edgeever/public-network": "workspace:*",
+    "croner": "^10.0.1",
+    "electron-updater": "^6.6.2"
+  }
+}

@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import tailwindAnimate from "tailwindcss-animate";
+import { MOBILE_UI_METRICS } from "@edgeever/shared/mobile-ui";
 
 const brandGreen = (shade: number) => `rgb(var(--brand-green-${shade}-rgb) / <alpha-value>)`;
 const slate = (shade: number) => `rgb(var(--slate-${shade}-rgb) / <alpha-value>)`;
@@ -14,22 +15,45 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          "Microsoft YaHei",
+          "Noto Sans SC",
+          "Inter",
+          "ui-sans-serif",
+          "system-ui",
           "sans-serif",
+        ],
+        mono: [
+          "JetBrains Mono",
+          "Fira Code",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
         ],
       },
       boxShadow: {
-        panel: "0 1px 2px rgb(15 23 42 / 0.07), 0 14px 34px rgb(36 56 39 / 0.08)",
+        panel: "0 1px 2px rgb(var(--slate-900-rgb) / 0.05), 0 16px 40px rgb(var(--slate-900-rgb) / 0.07)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
+        "mobile-sheet": `${MOBILE_UI_METRICS.floatingSheetCornerRadius}px`,
         sm: "calc(var(--radius) - 4px)",
+      },
+      spacing: {
+        "mobile-bottom-nav": `${MOBILE_UI_METRICS.bottomNavigationHeight}px`,
+        "mobile-control": `${MOBILE_UI_METRICS.compactControlHeight}px`,
+        "mobile-fab": `${MOBILE_UI_METRICS.floatingCreateButtonSize}px`,
+        "mobile-touch": `${MOBILE_UI_METRICS.minimumTouchTarget}px`,
       },
       colors: {
         slate: {
@@ -43,7 +67,35 @@ export default {
           700: slate(700),
           800: slate(800),
           900: slate(900),
-          950: "#020617",
+          950: slate(950),
+        },
+        amber: {
+          50: "rgb(var(--amber-50-rgb) / <alpha-value>)",
+          100: "rgb(var(--amber-100-rgb) / <alpha-value>)",
+          200: "rgb(var(--amber-200-rgb) / <alpha-value>)",
+          600: "rgb(var(--amber-600-rgb) / <alpha-value>)",
+          700: "rgb(var(--amber-700-rgb) / <alpha-value>)",
+          800: "rgb(var(--amber-800-rgb) / <alpha-value>)",
+          900: "rgb(var(--amber-900-rgb) / <alpha-value>)",
+          950: "rgb(var(--amber-950-rgb) / <alpha-value>)",
+        },
+        rose: {
+          50: "rgb(var(--rose-50-rgb) / <alpha-value>)",
+          100: "rgb(var(--rose-100-rgb) / <alpha-value>)",
+          200: "rgb(var(--rose-200-rgb) / <alpha-value>)",
+          500: "rgb(var(--rose-500-rgb) / <alpha-value>)",
+          600: "rgb(var(--rose-600-rgb) / <alpha-value>)",
+          700: "rgb(var(--rose-700-rgb) / <alpha-value>)",
+          800: "rgb(var(--rose-800-rgb) / <alpha-value>)",
+          950: "rgb(var(--rose-950-rgb) / <alpha-value>)",
+        },
+        red: {
+          50: "rgb(var(--rose-50-rgb) / <alpha-value>)",
+          600: "rgb(var(--rose-600-rgb) / <alpha-value>)",
+          700: "rgb(var(--rose-700-rgb) / <alpha-value>)",
+        },
+        blue: {
+          600: "rgb(var(--blue-600-rgb) / <alpha-value>)",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

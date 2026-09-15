@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Archive, CheckSquare, Folder as NotebookIcon, KeyRound, LayoutList, List, Merge, Star, Tags, Trash2, X } from "lucide-react";
+import { Archive, CheckSquare, FileDown, Folder as NotebookIcon, KeyRound, LayoutList, List, Merge, Star, Tags, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getMemoSortOptions, getNotebookMoveOptions } from "@/lib/app-helpers";
 import type { MemoListDensity, MemoSortMode } from "@/lib/app-helpers";
@@ -102,7 +103,7 @@ export const MobileListActionsSheet = ({
 
   return (
     <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-md lg:hidden">
+      <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-mobile-sheet lg:hidden">
         <header className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
           <DrawerHeader className="min-w-0 p-0">
             <DrawerTitle className="truncate">{t("mobileSheets.listOptions")}</DrawerTitle>
@@ -217,7 +218,7 @@ export const MobileMoveSheet = ({
 
   return (
     <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-md lg:hidden">
+      <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-mobile-sheet lg:hidden">
         <header className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
           <DrawerHeader className="min-w-0 p-0">
             <DrawerTitle className="truncate">{t("mobileSheets.moveToNotebook")}</DrawerTitle>
@@ -265,9 +266,11 @@ export const MobileMoveSheet = ({
 };
 
 export const MobileSelectionMoreSheet = ({
+  canExport,
   canMerge,
   canPin,
   canToggleVisibleSelection,
+  exportTitle,
   mergeTitle,
   pinLabel,
   pinTitle,
@@ -276,13 +279,16 @@ export const MobileSelectionMoreSheet = ({
   selectionToggleTitle,
   onClearSelection,
   onClose,
+  onExport,
   onMerge,
   onPin,
   onToggleVisibleSelection,
 }: {
+  canExport: boolean;
   canMerge: boolean;
   canPin: boolean;
   canToggleVisibleSelection: boolean;
+  exportTitle: string;
   mergeTitle: string;
   pinLabel: string;
   pinTitle: string;
@@ -291,6 +297,7 @@ export const MobileSelectionMoreSheet = ({
   selectionToggleTitle: string;
   onClearSelection: () => void;
   onClose: () => void;
+  onExport: () => void;
   onMerge: () => void;
   onPin: () => void;
   onToggleVisibleSelection: () => void;
@@ -300,7 +307,7 @@ export const MobileSelectionMoreSheet = ({
 
   return (
     <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-    <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-md lg:hidden">
+    <DrawerContent className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_6.75rem_-_env(safe-area-inset-bottom))] overflow-hidden rounded-mobile-sheet lg:hidden">
       <header className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
         <DrawerHeader className="min-w-0 p-0">
           <DrawerTitle className="truncate">{t("mobileSheets.bulkActions")}</DrawerTitle>
@@ -340,6 +347,23 @@ export const MobileSelectionMoreSheet = ({
         <Star className="h-4 w-4" />
         {pinLabel}
       </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block w-full border-b border-slate-100">
+            <button
+              className="flex h-12 w-full items-center gap-3 px-4 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:opacity-100 disabled:hover:bg-transparent"
+              type="button"
+              disabled={!canExport}
+              aria-label={exportTitle}
+              onClick={onExport}
+            >
+              <FileDown className="h-4 w-4" />
+              {t("mobileSheets.exportMarkdown")}
+            </button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{exportTitle}</TooltipContent>
+      </Tooltip>
       <button
         className="flex h-12 w-full items-center gap-3 px-4 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50"
         type="button"

@@ -2,56 +2,87 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
+  Info,
+  LayoutTemplate,
+  PawPrint,
   Shield,
   SlidersHorizontal,
   Sparkles,
   User,
   Users,
+  Wrench,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import * as m from "motion/react-m";
+import { SystemInfoDialog } from "@/components/SystemInfoDialog";
 import { Button } from "@/components/ui/button";
-import type { ShortcutSettings } from "@/lib/app-helpers";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  SETTINGS_CARD_DESCRIPTION_CLASSNAME,
+  SETTINGS_CARD_HEADER_CLASSNAME,
+  SETTINGS_CARD_ICON_CLASSNAME,
+  SETTINGS_CARD_TITLE_CLASSNAME,
+} from "./settings/settings-ui";
+import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import { cn } from "@/lib/utils";
-import { AdvancedPlayCard } from "./settings/AdvancedPlayCard";
+import { AccountInfoCard } from "./settings/AccountInfoCard";
 import { DataExportCard } from "./settings/DataExportCard";
+import { DesktopLocalDataCard } from "./settings/DesktopLocalDataCard";
+import { LoginDevicesCard } from "./settings/LoginDevicesCard";
 import { EvernoteImportGuideCard } from "./settings/EvernoteImportGuideCard";
+import { FeedbackLink } from "./settings/FeedbackLink";
+import { ProductHuntLink } from "./settings/ProductHuntLink";
 import { McpConfigCard } from "./settings/McpConfigCard";
 import { PreferenceCard } from "./settings/PreferenceCard";
 import { PasswordCard } from "./settings/PasswordCard";
-import { SessionCard } from "./settings/SessionCard";
-import { SystemInfoCard } from "./settings/SystemInfoCard";
 import { UserManagementCard } from "./settings/UserManagementCard";
+import { ObjectStorageCard } from "./settings/ObjectStorageCard";
+import { AiModelCard } from "./settings/AiModelCard";
+import { AiTagSuggestionPromptCard } from "./settings/AiTagSuggestionPromptCard";
 import { ThemeToggle } from "./ThemeToggle";
+import type { AuthUser } from "@edgeever/shared";
+import { CompanionDiscoverySettingsCard } from "./settings/CompanionDiscoverySettingsCard";
+import { contentEnterMotion } from "@/lib/motion";
+import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
+import { ExecutionCenterButton } from "@/components/execution/ExecutionCenterButton";
 
 interface SettingsPaneProps {
   onClose: () => void;
+  onOpenTemplates: () => void;
+  onOpenAiPrompts: () => void;
   imageCompressionEnabled: boolean;
   onImageCompressionChange: (enabled: boolean) => void;
   shortcutSettings: ShortcutSettings;
   onShortcutSettingsChange: (settings: ShortcutSettings) => void;
+  editorContentAlignment: EditorContentAlignment;
+  onEditorContentAlignmentChange: (alignment: EditorContentAlignment) => void;
   onLogout: () => void;
   isLoggingOut: boolean;
   authRequired: boolean;
   demoMode: boolean;
   isOwner: boolean;
-  onShowGuide?: () => void;
+  user: AuthUser | null;
+  refreshWorkspaceAfterImport: () => Promise<void>;
+  onOpenExecutionCenter: () => void;
+  companionScope: string;
+  onOpenCompanion: () => void;
 }
 
 // Slate and brand color variables already switch values with the root theme.
-// Keep this pane on the base utilities so dark variants do not invert them twice.
 const SettingsGroup = ({ children }: { children: ReactNode }) => (
-  <div className="min-w-0 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent">
+  <div className="min-w-0 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-card [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent">
     {children}
   </div>
 );
 
-type TabKey = "general" | "users" | "data" | "ai" | "account";
+type TabKey = "general" | "paw" | "users" | "data" | "ai" | "advanced" | "account";
 
 interface TabItem {
   key: TabKey;
   label: string;
+  badge?: string;
   icon: React.ComponentType<{ className?: string }>;
   colorClass: string;
   bgColorClass: string;
@@ -61,26 +92,55 @@ interface TabItem {
 
 export const SettingsPane = ({
   onClose,
+  onOpenTemplates,
+  onOpenAiPrompts,
   imageCompressionEnabled,
   onImageCompressionChange,
   shortcutSettings,
   onShortcutSettingsChange,
+  editorContentAlignment,
+  onEditorContentAlignmentChange,
   onLogout,
   isLoggingOut,
   authRequired,
   demoMode,
   isOwner,
-  onShowGuide,
+  user,
+  refreshWorkspaceAfterImport,
+  onOpenExecutionCenter,
+  companionScope,
+  onOpenCompanion,
 }: SettingsPaneProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("general");
   const [activeMobileTab, setActiveMobileTab] = useState<TabKey | null>(null);
+  const [systemInfoOpen, setSystemInfoOpen] = useState(false);
+  const { unseen: deployedUpdateUnseen } = useDeployedUpdateNotice();
+  const canClearLocalData = Boolean(window.edgeeverDesktop?.canClearLocalData);
 
   const tabItems: TabItem[] = [
     {
       key: "general",
       label: t("settings.tabs.general"),
       icon: SlidersHorizontal,
+      colorClass: "text-emerald-700",
+      bgColorClass: "bg-emerald-50/80",
+      hoverColorClass: "hover:bg-emerald-50/40",
+      iconColorClass: "text-emerald-600",
+    },
+    {
+      key: "ai",
+      label: t("settings.tabs.ai"),
+      icon: Sparkles,
+      colorClass: "text-emerald-700",
+      bgColorClass: "bg-emerald-50/80",
+      hoverColorClass: "hover:bg-emerald-50/40",
+      iconColorClass: "text-emerald-600",
+    },
+    {
+      key: "data",
+      label: t("settings.tabs.data"),
+      icon: Database,
       colorClass: "text-emerald-700",
       bgColorClass: "bg-emerald-50/80",
       hoverColorClass: "hover:bg-emerald-50/40",
@@ -100,18 +160,19 @@ export const SettingsPane = ({
         ]
       : []),
     {
-      key: "data",
-      label: t("settings.tabs.data"),
-      icon: Database,
+      key: "paw",
+      label: t("settings.tabs.paw"),
+      badge: "Beta",
+      icon: PawPrint,
       colorClass: "text-emerald-700",
       bgColorClass: "bg-emerald-50/80",
       hoverColorClass: "hover:bg-emerald-50/40",
       iconColorClass: "text-emerald-600",
     },
     {
-      key: "ai",
-      label: t("settings.tabs.ai"),
-      icon: Sparkles,
+      key: "advanced",
+      label: t("settings.tabs.advanced"),
+      icon: Wrench,
       colorClass: "text-emerald-700",
       bgColorClass: "bg-emerald-50/80",
       hoverColorClass: "hover:bg-emerald-50/40",
@@ -170,35 +231,74 @@ export const SettingsPane = ({
               onImageCompressionChange={onImageCompressionChange}
               shortcutSettings={shortcutSettings}
               onShortcutSettingsChange={onShortcutSettingsChange}
+              editorContentAlignment={editorContentAlignment}
+              onEditorContentAlignmentChange={onEditorContentAlignmentChange}
             />
-            <SystemInfoCard />
+            <FeedbackLink className="hidden lg:flex" />
+            <ProductHuntLink className="hidden lg:flex" />
+          </SettingsGroup>
+        );
+      case "paw":
+        return (
+          <SettingsGroup>
+            {authRequired && user && !demoMode ? (
+              <CompanionDiscoverySettingsCard scope={companionScope} onOpenCompanion={onOpenCompanion}
+                onOpenAiSettings={() => setActiveTab("ai")} />
+            ) : (
+              <Card className="shadow-none">
+                <CardHeader className={SETTINGS_CARD_HEADER_CLASSNAME}>
+                  <CardTitle className={SETTINGS_CARD_TITLE_CLASSNAME}>
+                    <PawPrint className={SETTINGS_CARD_ICON_CLASSNAME} />
+                    {t("companion.discovery.settingsTitle")}
+                  </CardTitle>
+                  <CardDescription className={SETTINGS_CARD_DESCRIPTION_CLASSNAME}>
+                    {t("companion.unavailableHelp")}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
           </SettingsGroup>
         );
       case "users":
         return isOwner ? (
           <SettingsGroup>
-            <UserManagementCard />
+            <UserManagementCard demoMode={demoMode} />
           </SettingsGroup>
         ) : null;
       case "data":
         return (
           <SettingsGroup>
-            <DataExportCard />
-            <EvernoteImportGuideCard onShowGuide={onShowGuide} />
+            <DataExportCard refreshWorkspaceAfterImport={refreshWorkspaceAfterImport} />
+            <EvernoteImportGuideCard />
           </SettingsGroup>
         );
       case "ai":
         return (
           <SettingsGroup>
-            <AdvancedPlayCard />
+            <AiModelCard />
             <McpConfigCard />
+          </SettingsGroup>
+        );
+      case "advanced":
+        return (
+          <SettingsGroup>
+            <AiTagSuggestionPromptCard />
+            {isOwner ? <ObjectStorageCard demoMode={demoMode} /> : null}
+            {canClearLocalData ? <DesktopLocalDataCard /> : null}
           </SettingsGroup>
         );
       case "account":
         return (
           <SettingsGroup>
+            <AccountInfoCard user={user} />
             <PasswordCard authRequired={authRequired} demoMode={demoMode} />
-            <SessionCard authRequired={authRequired} isLoggingOut={isLoggingOut} onLogout={onLogout} />
+            {demoMode ? null : (
+              <LoginDevicesCard
+                authRequired={authRequired}
+                isLoggingOut={isLoggingOut}
+                onLogout={onLogout}
+              />
+            )}
           </SettingsGroup>
         );
       default:
@@ -208,7 +308,7 @@ export const SettingsPane = ({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-slate-50">
-      <header className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 bg-white px-4 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:px-6 lg:pb-0 lg:pt-0">
+      <header className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 bg-card px-4 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:px-6 lg:pb-0 lg:pt-0">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             size="icon"
@@ -227,7 +327,10 @@ export const SettingsPane = ({
             </h1>
           </div>
         </div>
-        <ThemeToggle className="inline-flex" showLabel />
+        <div className="flex items-center gap-1">
+          <ExecutionCenterButton onClick={onOpenExecutionCenter} />
+          <ThemeToggle className="inline-flex" showLabel />
+        </div>
       </header>
 
       <div className="flex flex-1 min-h-0 min-w-0 bg-slate-50/50">
@@ -251,7 +354,19 @@ export const SettingsPane = ({
                   )}
                 >
                   <Icon className={cn("h-4 w-4 shrink-0 transition-colors", isSelected ? item.colorClass : "text-slate-400")} />
-                  {item.label}
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {item.badge ? (
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                        isSelected
+                          ? "bg-emerald-600/15 text-emerald-800"
+                          : "bg-slate-200/80 text-slate-600"
+                      )}
+                    >
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -259,9 +374,9 @@ export const SettingsPane = ({
 
           {/* 右侧设置内容区 */}
           <main className="flex-1 min-w-0 overflow-y-auto pr-2">
-            <div className="grid gap-4">
+            <m.div key={activeTab} className="grid gap-4" {...contentEnterMotion}>
               {renderTabContent(activeTab)}
-            </div>
+            </m.div>
           </main>
         </div>
 
@@ -270,7 +385,35 @@ export const SettingsPane = ({
           {activeMobileTab === null ? (
             /* 分类主菜单 */
             <div className="grid gap-2">
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-card">
+                <button
+                  type="button"
+                  onClick={onOpenTemplates}
+                  className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-slate-50/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50/80">
+                      <LayoutTemplate className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <span className="text-sm font-semibold text-slate-800">{t("nav.templates")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenAiPrompts}
+                  className="flex w-full items-center justify-between gap-4 border-t border-slate-100 p-4 text-left transition-colors hover:bg-slate-50/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50/80">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <span className="text-sm font-semibold text-slate-800">{t("nav.prompts")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+              </div>
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-card">
                 {tabItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -285,21 +428,48 @@ export const SettingsPane = ({
                           <Icon className={cn("h-4 w-4", item.iconColorClass)} />
                         </div>
                         <span className="text-sm font-semibold text-slate-800">{item.label}</span>
+                        {item.badge ? (
+                          <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            {item.badge}
+                          </span>
+                        ) : null}
                       </div>
                       <ChevronRight className="h-4 w-4 text-slate-400" />
                     </button>
                   );
                 })}
               </div>
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-card">
+                <button
+                  type="button"
+                  onClick={() => setSystemInfoOpen(true)}
+                  className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50/80">
+                      <Info className="h-4 w-4 text-emerald-600" />
+                      {deployedUpdateUnseen ? <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white" /> : null}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{t("systemInfo.title")}</span>
+                      <span className="mt-0.5 block truncate text-xs text-slate-500">{t("systemInfo.description")}</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                </button>
+                <FeedbackLink />
+                <ProductHuntLink />
+              </div>
             </div>
           ) : (
             /* 详情页面 */
-            <div className="grid gap-4">
+            <m.div key={activeMobileTab} className="grid gap-4" {...contentEnterMotion}>
               {renderTabContent(activeMobileTab)}
-            </div>
+            </m.div>
           )}
         </div>
       </div>
+      <SystemInfoDialog open={systemInfoOpen} onOpenChange={setSystemInfoOpen} />
     </div>
   );
 };

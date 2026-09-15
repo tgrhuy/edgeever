@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,16 +9,39 @@ import {
   Strikethrough,
   Code2,
   List,
+  ListTodo,
   ListOrdered,
   Quote,
   SquareCode,
+  ChartNoAxesCombined,
   Minus,
+  Paperclip,
+  Link,
+  Link2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MemoEditorToolbarDivider, MemoEditorToolbarRow } from "@/components/MemoEditorToolbarChrome";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getActiveBlockValue } from "@/lib/app-helpers";
+import {
+  formatShortcutBinding,
+  getActiveBlockValue,
+  readEditorToolbarExpandedPreference,
+  writeEditorToolbarExpandedPreference,
+  type ShortcutBinding,
+} from "@/lib/app-helpers";
 import { CODE_BLOCK_LANGUAGES, getCodeBlockLanguageValue } from "@/lib/code-block";
+import { EditorTableMenu } from "@/components/EditorTableMenu";
+import { wrapIndentedParagraphInList } from "@/lib/editor-shortcuts";
+import {
+  EDITOR_THEME_NAMES,
+  MARKDOWN_THEME_PREFERENCES,
+  localizeStoredCustomThemeName,
+  useEditorTheme,
+  useMarkdownTheme,
+} from "@/components/ThemeProvider";
 
 const EditorToolbarButton = ({
   active = false,
@@ -56,25 +79,8 @@ const EditorToolbarButton = ({
   </Tooltip>
 );
 
-const ToolbarDivider = () => <div className="h-6 w-px shrink-0 bg-slate-200" />;
-
 const isToolbarEditorReady = (editor: Editor | null): editor is Editor =>
   Boolean(editor && !editor.isDestroyed && (editor as { extensionManager?: unknown }).extensionManager);
-
-const editorHasCodeBlock = (editor: Editor) => {
-  let found = false;
-
-  editor.state.doc.descendants((node) => {
-    if (node.type.name === "codeBlock") {
-      found = true;
-      return false;
-    }
-
-    return true;
-  });
-
-  return found;
-};
 
 const toggleCodeBlock = (editor: Editor) => {
   const { from, to, empty } = editor.state.selection;
@@ -98,18 +104,75 @@ const toggleCodeBlock = (editor: Editor) => {
     .run();
 };
 
+const insertMermaidDiagram = (editor: Editor) => {
+  if (editor.isActive("codeBlock")) {
+    editor.chain().focus().updateAttributes("codeBlock", { language: "mermaid" }).run();
+    return;
+  }
+
+  const { from, to } = editor.state.selection;
+  const selectedText = editor.state.doc.textBetween(from, to, "\n", "\n").trim();
+  const source = selectedText || "flowchart LR\n  A[Start] --> B[End]";
+
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(
+      { from, to },
+      {
+        type: "codeBlock",
+        attrs: { language: "mermaid" },
+        content: [{ type: "text", text: source }],
+      }
+    )
+    .run();
+};
+
+const toggleListAtSelection = (editor: Editor, listType: "bulletList" | "orderedList" | "taskList") => {
+  editor.commands.focus();
+  if (wrapIndentedParagraphInList(editor.state, editor.view.dispatch, listType)) {
+    return;
+  }
+
+  if (listType === "bulletList") {
+    editor.commands.toggleBulletList();
+  } else if (listType === "orderedList") {
+    editor.commands.toggleOrderedList();
+  } else {
+    editor.commands.toggleTaskList();
+  }
+};
+
 export const EditorToolbar = ({
   editor,
   readOnly,
   markdownMode = false,
   onMarkdownModeChange,
+  markdownModeShortcut,
+  onPickAttachment,
+  onPickExternalLink,
+  onPickNoteLink,
+  externalLinkActive = false,
 }: {
   editor: Editor | null;
   readOnly: boolean;
   markdownMode?: boolean;
   onMarkdownModeChange?: () => void;
+  markdownModeShortcut?: ShortcutBinding;
+  onPickAttachment?: () => void;
+  /** Insert or edit an external hyperlink (not a note reference). */
+  onPickExternalLink?: () => void;
+  onPickNoteLink?: () => void;
+  externalLinkActive?: boolean;
 }) => {
   const { t } = useTranslation();
+  const { markdownThemePreference, setMarkdownTheme } = useMarkdownTheme();
+  const { editorTheme, setEditorTheme, customEditorThemes } = useEditorTheme();
+  const namedEditorThemes = EDITOR_THEME_NAMES.filter((theme) => theme !== "custom");
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(readEditorToolbarExpandedPreference);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const markdownModeShortcutLabel = markdownModeShortcut ? formatShortcutBinding(markdownModeShortcut) : null;
   const editorReady = isToolbarEditorReady(editor);
   const disabled = readOnly || !editorReady;
   const blockValue = getActiveBlockValue(editor);
@@ -125,10 +188,54 @@ export const EditorToolbar = ({
     }
   };
   const codeBlockActive = isActive("codeBlock");
-  const showCodeLanguageSelector = editorReady && editorHasCodeBlock(editor);
+  const showCodeLanguageSelector = codeBlockActive;
   const codeBlockLanguage = editorReady
     ? getCodeBlockLanguageValue(editor.getAttributes("codeBlock").language)
     : "plaintext";
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const updateOverflow = () => {
+      const style = window.getComputedStyle(controls);
+      const gap = Number.parseFloat(style.columnGap) || 0;
+      const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) * 2;
+      const visibleItems = Array.from(controls.children).filter(
+        (child): child is HTMLElement => child instanceof HTMLElement && child.offsetWidth > 0
+      );
+      const requiredWidth = visibleItems.reduce((width, item) => width + item.offsetWidth, 0)
+        + Math.max(0, visibleItems.length - 1) * gap;
+      const availableWidth = Math.max(0, controls.clientWidth - horizontalPadding);
+      const next = requiredWidth > availableWidth + 1;
+      const firstRowTop = Math.min(...visibleItems.map((item) => item.offsetTop));
+
+      visibleItems.forEach((item) => {
+        item.inert = !expanded && next && item.offsetTop > firstRowTop + 1;
+      });
+
+      setHasOverflow((current) => {
+        return current === next ? current : next;
+      });
+    };
+
+    updateOverflow();
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(controls);
+    Array.from(controls.children).forEach((child) => observer.observe(child));
+    return () => {
+      observer.disconnect();
+      Array.from(controls.children).forEach((child) => {
+        if (child instanceof HTMLElement) child.inert = false;
+      });
+    };
+  });
+
+  const toggleExpanded = () => {
+    const next = !expanded;
+    setExpanded(next);
+    writeEditorToolbarExpandedPreference(next);
+  };
 
   const canRun = (command: (editor: Editor) => boolean) => {
     if (!isToolbarEditorReady(editor) || readOnly) {
@@ -180,50 +287,151 @@ export const EditorToolbar = ({
   };
 
   return (
-    <TooltipProvider delayDuration={250} skipDelayDuration={100}>
-      <div className="relative border-t border-slate-200 bg-white">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-white to-transparent sm:hidden" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-white to-transparent sm:hidden" />
-        <div
-          className="flex min-h-12 items-center gap-2 overflow-x-auto px-3 py-2 [scrollbar-width:none] sm:px-5 [&::-webkit-scrollbar]:hidden"
-          role="toolbar"
-          aria-label={t("editorToolbar.toolbar")}
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+      <div
+        className="relative min-w-0 max-w-full border-t border-slate-100 bg-card"
+        role="toolbar"
+        aria-label={t("editorToolbar.toolbar")}
+      >
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-card to-transparent sm:hidden" />
+        <MemoEditorToolbarRow
+          ref={controlsRef}
+          className={cn(
+            hasOverflow && "pr-14 sm:pr-16",
+            !expanded && "max-h-12 overflow-hidden"
+          )}
         >
           {onMarkdownModeChange && (
             <>
-              <button
-                className={cn(
-                  "flex h-8 shrink-0 items-center rounded-md border px-2.5 text-xs font-medium transition disabled:pointer-events-none disabled:opacity-40",
-                  markdownMode
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                type="button"
-                title={markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}
-                aria-label={markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}
-                aria-pressed={markdownMode}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className={cn(
+                      "flex h-8 shrink-0 items-center rounded-md border px-2.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+                      markdownMode
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-slate-200/80 bg-card text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                    )}
+                    type="button"
+                    aria-label={markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}
+                    aria-pressed={markdownMode}
+                    disabled={readOnly}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={onMarkdownModeChange}
+                  >
+                    {markdownMode ? t("editorToolbar.switchToRichText") : t("editorToolbar.switchToMarkdown")}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="flex items-center gap-2">
+                  <span>{markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}</span>
+                  {markdownModeShortcutLabel && (
+                    <kbd className="rounded border border-border/20 bg-card/10 px-1.5 py-0.5 font-mono text-[10px] leading-none">
+                      {markdownModeShortcutLabel}
+                    </kbd>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+              <MemoEditorToolbarDivider className="hidden sm:block" />
+            </>
+          )}
+          {onPickAttachment && (
+            <>
+              <EditorToolbarButton
+                title={t("editorToolbar.attachment")}
                 disabled={readOnly}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={onMarkdownModeChange}
+                onClick={onPickAttachment}
               >
-                {markdownMode ? t("editorToolbar.switchToRichText") : t("editorToolbar.switchToMarkdown")}
-              </button>
-              <ToolbarDivider />
+                <Paperclip className="h-4 w-4" />
+              </EditorToolbarButton>
+              <MemoEditorToolbarDivider className="hidden sm:block" />
+            </>
+          )}
+          {onPickExternalLink && (
+            <>
+              <EditorToolbarButton
+                title={
+                  externalLinkActive
+                    ? t("editorToolbar.externalLinkEdit")
+                    : t("editorToolbar.externalLinkShortcut")
+                }
+                active={externalLinkActive}
+                disabled={readOnly}
+                onClick={onPickExternalLink}
+              >
+                <Link className="h-4 w-4" />
+              </EditorToolbarButton>
+              <MemoEditorToolbarDivider className="hidden sm:block" />
+            </>
+          )}
+          {onPickNoteLink && (
+            <>
+              <EditorToolbarButton
+                title={t("editorToolbar.noteLink")}
+                disabled={readOnly}
+                onClick={onPickNoteLink}
+              >
+                <Link2 className="h-4 w-4" />
+              </EditorToolbarButton>
+              <MemoEditorToolbarDivider className="hidden sm:block" />
             </>
           )}
           {markdownMode ? (
-            <span className="shrink-0 text-xs text-slate-500">{t("editorToolbar.markdownSource")}</span>
+            <Select
+              value={markdownThemePreference}
+              onValueChange={(value) => setMarkdownTheme(value as typeof markdownThemePreference)}
+            >
+              <SelectTrigger
+                aria-label={t("editorToolbar.markdownTheme")}
+                className="h-8 w-[11.5rem] shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
+                {MARKDOWN_THEME_PREFERENCES.map((theme) => (
+                  <SelectItem key={theme} value={theme}>
+                    {t(`settings.markdownThemes.${theme}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
             <>
+          <Select
+            value={editorTheme}
+            onValueChange={(value) => setEditorTheme(value)}
+          >
+            <SelectTrigger
+              aria-label={t("editorToolbar.editorTheme")}
+              className="h-8 w-[6.5rem] shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[10rem] bg-card border border-slate-200 rounded-md py-1 shadow-md">
+              {namedEditorThemes.map((theme) => (
+                <SelectItem key={theme} value={theme}>
+                  {t(`settings.editorThemes.${theme}`)}
+                </SelectItem>
+              ))}
+              {customEditorThemes.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {localizeStoredCustomThemeName(theme.name, {
+                    defaultName: t("settings.customEditorTheme.defaultName"),
+                    newName: (index) => t("settings.customEditorTheme.newName", { n: index }),
+                  })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <Select
             value={blockValue}
             disabled={disabled}
             onValueChange={(value) => setBlock(value)}
           >
-            <SelectTrigger className="h-8 w-20 shrink-0 whitespace-nowrap border-slate-200 bg-white text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap">
+            <SelectTrigger className="h-8 w-20 shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap">
               <SelectValue placeholder={t("editorToolbar.paragraph")} />
             </SelectTrigger>
-            <SelectContent className="bg-white border border-slate-200 rounded-md py-1 shadow-md">
+            <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
               <SelectItem value="paragraph">{t("editorToolbar.paragraph")}</SelectItem>
               <SelectItem value="heading-1">{t("editorToolbar.heading1")}</SelectItem>
               <SelectItem value="heading-2">{t("editorToolbar.heading2")}</SelectItem>
@@ -231,7 +439,7 @@ export const EditorToolbar = ({
             </SelectContent>
           </Select>
 
-          <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
             title={t("editorToolbar.undo")}
             disabled={!canRun((current) => current.can().chain().focus().undo().run())}
@@ -247,7 +455,7 @@ export const EditorToolbar = ({
             <Redo2 className="h-4 w-4" />
           </EditorToolbarButton>
 
-          <ToolbarDivider />
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
             title={t("editorToolbar.bold")}
             active={isActive("bold")}
@@ -281,20 +489,28 @@ export const EditorToolbar = ({
             <Code2 className="h-4 w-4" />
           </EditorToolbarButton>
 
-          <ToolbarDivider />
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
-            title={t("editorToolbar.bulletList")}
+            title={`${t("editorToolbar.bulletList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("bulletList")}
             disabled={disabled}
-            onClick={() => run((current) => current.chain().focus().toggleBulletList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "bulletList"))}
           >
             <List className="h-4 w-4" />
           </EditorToolbarButton>
           <EditorToolbarButton
-            title={t("editorToolbar.orderedList")}
+            title={`${t("editorToolbar.taskList")} · ${t("editorToolbar.listIndentHint")}`}
+            active={isActive("taskList")}
+            disabled={!canRun((current) => current.can().chain().focus().toggleTaskList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "taskList"))}
+          >
+            <ListTodo className="h-4 w-4" />
+          </EditorToolbarButton>
+          <EditorToolbarButton
+            title={`${t("editorToolbar.orderedList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("orderedList")}
             disabled={disabled}
-            onClick={() => run((current) => current.chain().focus().toggleOrderedList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "orderedList"))}
           >
             <ListOrdered className="h-4 w-4" />
           </EditorToolbarButton>
@@ -323,12 +539,12 @@ export const EditorToolbar = ({
               }
             >
               <SelectTrigger
-                className="h-8 w-32 shrink-0 whitespace-nowrap border-slate-200 bg-white text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+                className="h-8 w-32 shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
                 aria-label={t("editorToolbar.codeLanguage")}
               >
                 <SelectValue placeholder={t("editorToolbar.plainText")} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-200 rounded-md py-1 shadow-md">
+              <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
                 {CODE_BLOCK_LANGUAGES.map((language) => (
                   <SelectItem key={language.value} value={language.value}>
                     {language.value === "plaintext" ? t("editorToolbar.plainText") : language.label}
@@ -338,15 +554,45 @@ export const EditorToolbar = ({
             </Select>
           )}
           <EditorToolbarButton
+            title={t("editorToolbar.mermaidDiagram")}
+            active={codeBlockActive && codeBlockLanguage === "mermaid"}
+            disabled={disabled}
+            onClick={() => run(insertMermaidDiagram)}
+          >
+            <ChartNoAxesCombined className="h-4 w-4" />
+          </EditorToolbarButton>
+          <EditorToolbarButton
             title={t("editorToolbar.horizontalRule")}
             disabled={disabled}
             onClick={() => run((current) => current.chain().focus().setHorizontalRule().run())}
           >
             <Minus className="h-4 w-4" />
           </EditorToolbarButton>
+          <EditorTableMenu editor={editor} readOnly={readOnly} />
             </>
           )}
-        </div>
+        </MemoEditorToolbarRow>
+        {hasOverflow && (
+          <div className="absolute right-3 top-2 z-20 flex h-8 items-center bg-gradient-to-l from-card via-card to-transparent pl-5 sm:right-4 sm:top-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-card text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-label={t(expanded ? "editorToolbar.showLess" : "editorToolbar.showMore")}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={toggleExpanded}
+                >
+                  {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {t(expanded ? "editorToolbar.showLess" : "editorToolbar.showMore")}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

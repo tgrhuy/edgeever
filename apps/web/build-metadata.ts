@@ -12,3 +12,5 @@ export const resolveAppVersion = (packageVersion: string, gitDescription: string
     ? releaseVersion
     : `${releaseVersion}+${commitsSinceRelease}`;
 };
+
+export const resolveReleaseTimestamp = (releaseTimestamp: string | undefined) => releaseTimestamp?.trim() ?? "";

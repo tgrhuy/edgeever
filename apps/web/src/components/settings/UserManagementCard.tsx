@@ -5,12 +5,24 @@ import { useTranslation } from "react-i18next";
 import type { InstanceUser } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  SETTINGS_CARD_DESCRIPTION_CLASSNAME,
+  SETTINGS_CARD_HEADER_CLASSNAME,
+  SETTINGS_CARD_ICON_CLASSNAME,
+  SETTINGS_CARD_TITLE_CLASSNAME,
+  SETTINGS_ITEM_TITLE_CLASSNAME,
+} from "./settings-ui";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ApiRequestError, api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
-export const UserManagementCard = () => {
+interface UserManagementCardProps {
+  demoMode: boolean;
+}
+
+export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -70,14 +82,14 @@ export const UserManagementCard = () => {
   return (
     <>
       <Card className="w-full min-w-0 overflow-hidden shadow-none">
-        <CardHeader className="p-4">
+        <CardHeader className={SETTINGS_CARD_HEADER_CLASSNAME}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-emerald-700" />
+              <CardTitle className={SETTINGS_CARD_TITLE_CLASSNAME}>
+                <Users className={SETTINGS_CARD_ICON_CLASSNAME} />
                 {t("users.title")}
               </CardTitle>
-              <CardDescription className="mt-1">{t("users.description")}</CardDescription>
+              <CardDescription className={SETTINGS_CARD_DESCRIPTION_CLASSNAME}>{t("users.description")}</CardDescription>
             </div>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <UserPlus className="h-4 w-4" /> {t("users.create")}
@@ -89,13 +101,15 @@ export const UserManagementCard = () => {
           {usersQuery.data?.users.map((user) => (
             <div key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-card/40 p-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-800">{user.displayName || user.username}</p>
+                <p className={cn("truncate", SETTINGS_ITEM_TITLE_CLASSNAME)}>{user.displayName || user.username}</p>
                 <p className="truncate text-xs text-slate-500">@{user.username} · {t(`users.roles.${user.role}`)}</p>
               </div>
               <div className="flex items-center gap-3">
-                <Button size="sm" variant="outline" onClick={() => setResetUser(user)}>
-                  <KeyRound className="h-3.5 w-3.5" /> {t("users.resetPassword")}
-                </Button>
+                {demoMode && user.role === "owner" ? null : (
+                  <Button size="sm" variant="outline" onClick={() => setResetUser(user)}>
+                    <KeyRound className="h-3.5 w-3.5" /> {t("users.resetPassword")}
+                  </Button>
+                )}
                 {user.role !== "owner" ? (
                   <label className="flex items-center gap-2 text-xs text-slate-600">
                     {user.isDisabled ? t("users.disabled") : t("users.enabled")}
