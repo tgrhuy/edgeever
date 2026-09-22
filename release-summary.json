@@ -1,21 +1,20 @@
 {
-  "version": "1.79.0",
+  "version": "1.81.0",
   "changes": {
     "en-US": [
-      "Add GitHub-style fold blocks with slash /fold and Markdown details round-trip, and tighten their alignment in the editor, export, and print views.",
-      "Change a note's notebook from the mobile and iOS view screen without entering the editor.",
-      "Include screen resolution and device model in system information, and drop the local data directory so screenshots no longer expose usernames or account hashes.",
-      "Keep the collapsed memo editor toolbar from leaking a second row.",
-      "Keep Markdown source selection from highlighting other copies of the same text.",
-      "Squeeze CJK punctuation and wrap overflowing text more cleanly across web, mobile, iOS, and image cards."
+      "Create richer architecture diagrams with new AI components and hardware icons, more reliable insertion and diagram-kind handling, and refined architecture and flowchart visuals.",
+      "Explore improved public Demo examples for flowcharts, mind maps, and architecture diagrams, with corrected routing, nesting, and saved automatic layouts.",
+      "Open Android GitHub update downloads through a compatible external destination."
     ],
     "zh-CN": [
-      "支持 GitHub 风格折叠块：斜杠 /fold 可插入，Markdown 的 details 可来回转换，并收紧编辑器、导出和打印里的对齐与尺寸。",
-      "手机和 iOS 在笔记浏览页就能改所属笔记本，不必先进编辑。",
-      "系统信息增加当前屏幕分辨率和设备型号，并去掉本机数据目录，避免截图或复制时带出用户名和账号哈希。",
-      "收起的笔记编辑工具栏不再漏出第二行色块。",
-      "Markdown 源码选中一段文字时，不再把文中其他相同片段一起点亮。",
-      "中日韩标点按规范挤压，超长文本在网页、手机、iOS 和图片卡片上也能正常换行。"
+      "架构图新增 AI 组件与硬件图标，节点插入和图表类型识别更可靠，并优化架构图与流程图的视觉表现。",
+      "公开 Demo 的流程图、思维导图和架构图示例全面更新，并修正连线路由、层级结构与自动布局保存。",
+      "Android 客户端的 GitHub 更新下载现可通过兼容的外部目标正常打开。"
+    ],
+    "ja": [
+      "アーキテクチャ図に AI コンポーネントとハードウェアアイコンを追加し、ノード挿入と図種別の処理を安定化して、アーキテクチャ図とフローチャートの表示を改善しました。",
+      "公開デモのフローチャート、マインドマップ、アーキテクチャ図の例を刷新し、配線、階層構造、自動レイアウトの保存を修正しました。",
+      "Android クライアントで GitHub の更新ダウンロードを互換性のある外部アプリから正しく開けるようになりました。"
     ]
   }
 }

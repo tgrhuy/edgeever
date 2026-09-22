@@ -78,7 +78,7 @@ EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為�
 - **優雅的雙檢視編輯**：桌面版支援在富文字與 Markdown 原始碼檢視之間自由切換。
 - **單篇筆記便捷匯出**：可將目前筆記直接匯出為 Markdown、HTML 或 PDF，方便獨立儲存、分享與發布。
 - **Mermaid 架構圖與流程圖繪製**：原生支援 Mermaid 程式碼區塊繪製，檢視切換時完整保留可編輯原始碼，讓繪製邏輯圖表更直觀。
-- **視覺化圖表筆記**：Web 與桌面版支援建立、編輯心智圖、流程圖和架構圖，提供語意元件、系統邊界、連線說明、自動版面、歷史版本及 PNG/SVG 匯出；Android 與 iOS App 保留同一份圖表資料，並提供語意化唯讀檢視。詳見[視覺化圖表筆記設計說明](docs/visual-diagram-notes.zh-CN.md)。
+- **視覺化圖表筆記**：告別外部繪圖軟體，在筆記內即可直觀繪製心智圖、流程圖與架構圖；基於結構化 IR，內建助手與外部 AI Agent 可一句話智慧產生與修改圖表，支援自動版面、全端同步及向量匯出。詳見[視覺化圖表筆記設計說明](docs/visual-diagram-notes.zh-CN.md)。
 - **筆記歷史版本回溯**：自動記錄修改歷史，隨時查閱與還原過往版本。
 - **公開筆記分享**：支援公開分享筆記，並可隨時取消分享；需要時可為分享連結開啟自動產生的存取密碼。
 - **行動 App 微信公眾號文章擷取**：在手機上將微信公眾號文章分享至 EdgeEver，即可擷取正文並儲存為可繼續編輯的筆記。
@@ -183,7 +183,7 @@ EdgeEver 官方容器映像託管於 GitHub Container Registry（GHCR）。部�
 
 ## 外掛與主題
 
-EdgeEver 的 Web 與桌面版支援外掛和無程式碼主題，可從外掛市集、GitHub 或 Manifest 網址安裝。安裝清單會隨目前工作區在瀏覽器和桌面應用程式之間同步，每個用戶端會自行下載並校驗外掛套件；Android 和 iOS 原生應用程式不執行外掛。設定和金鑰仍只保存在目前裝置。官方外掛市集僅收錄自由及開源外掛，此要求不限制使用者直接透過 GitHub 或 Manifest 網址安裝其他外掛。開發者可使用 `@edgeever/plugin-api`，詳情參閱[外掛開發文件](docs/plugin-development.zh-CN.md)和[官方外掛市集上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
+Web 與桌面版支援功能外掛與個人化主題，可從官方市集、GitHub 或 Manifest 網址一鍵安裝，並隨工作區跨端同步。開發者可使用 `@edgeever/plugin-api` 擴充功能，詳情參閱[外掛開發文件](docs/plugin-development.zh-CN.md)與[官方外掛市集上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
 
 ## 技術棧
 

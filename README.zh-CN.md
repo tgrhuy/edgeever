@@ -78,7 +78,7 @@ EdgeEver 是一款现代化的开源笔记与个人知识库工作区。它为�
 - **优雅的双视图编辑**：桌面端支持在富文本与 Markdown 源码视图之间自由切换。
 - **单篇笔记便捷导出**：可将当前笔记直接导出为 Markdown、HTML 或 PDF，方便独立保存、分享与发布。
 - **Mermaid 架构图与流程图渲染**：原生支持 Mermaid 代码块渲染，视图切换时完整保留可编辑源码，让绘制逻辑图表更直观。
-- **可视化图表笔记**：Web 与桌面端支持创建、编辑思维导图、流程图和架构图，提供语义组件、系统边界、连线说明、自动布局、历史版本及 PNG/SVG 导出；Android 与 iOS App 保留同一份图表数据，并提供语义化只读视图。详见[可视化图表笔记设计说明](docs/visual-diagram-notes.zh-CN.md)。
+- **可视化图表笔记**：告别外部绘图软件，在笔记内即可直观绘制思维导图、流程图与架构图；基于结构化 IR，内置助手与外部 AI Agent 可一句话智能生成与修改图表，支持自动布局、全端同步及矢量导出。详见[可视化图表笔记设计说明](docs/visual-diagram-notes.zh-CN.md)。
 - **笔记历史版本回溯**：自动记录修改历史，随时查阅与还原过往版本。
 - **公开笔记分享**：支持公开分享笔记，并可随时取消分享；需要时可为分享链接开启自动生成的访问密码。
 - **移动 App 微信公众号文章剪藏**：在手机上将微信公众号文章分享至 EdgeEver，即可提取正文并保存为可继续编辑的笔记。
@@ -183,7 +183,7 @@ EdgeEver 官方容器镜像托管于 GitHub Container Registry（GHCR）。部�
 
 ## 插件与主题
 
-EdgeEver 的 Web 与桌面端支持插件和无代码主题，可从插件市场、GitHub 或 Manifest 地址安装。安装清单会随当前工作区在浏览器和桌面应用之间同步，每个客户端会自行下载并校验插件包；Android 和 iOS 原生应用不运行插件。设置和密钥仍只保存在当前设备。官方插件市场仅收录自由及开源插件，该要求不限制用户直接通过 GitHub 或 Manifest 地址安装其他插件。开发者可使用 `@edgeever/plugin-api`，详情参阅[插件开发文档](docs/plugin-development.zh-CN.md)和[官方插件市场上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
+Web 与桌面端支持功能插件与个性化主题，可从官方市场、GitHub 或 Manifest 地址一键安装，并随工作区跨端同步。开发者可使用 `@edgeever/plugin-api` 扩展能力，详见[插件开发文档](docs/plugin-development.zh-CN.md)与[官方插件市场上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
 
 ## 技术栈
 
