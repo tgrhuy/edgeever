@@ -1,26 +1,29 @@
 {
-  "version": "1.88.0",
+  "version": "1.90.0",
   "changes": {
     "en-US": [
-      "The Web Clipper can save a right-clicked image, or a right-clicked X post, as a new note.",
-      "Web and desktop use a quieter workspace. Secondary green on settings, dialogs, menus, and controls becomes ink. Brand green stays on the new-note button, solid actions, brief success, and unread dots. The light note surface sits one step above the list, heavy fills are lighter, and the template page no longer shows its two explanatory lines.",
-      "Markdown and rich text reading gutters line up. Diagram and infographic titles stay on one row with their metadata. Menus and secondary pages finish the 14px and 12px type scale. Note-type icons and card metadata are tighter, memo cards follow the theme on hover, the more-types control and Beta marks use the workspace gray, and the rich text view switch uses a document icon.",
-      "On a phone-width layout, images fill the note column. A width saved on desktop, such as 35%, stays stored in the note.",
-      "On Android, in-note search keeps the field, match count, and previous, next, and close controls on one bar."
+      "Mind maps and flowcharts default to the Plain theme, with medium-gray emphasis. Diagrams without a saved theme use that look, and every diagram canvas uses the note editor surface.",
+      "The infographic editor opens without getting stuck, and updating its registry no longer breaks rendering.",
+      "The note header shows a GitHub link in place of the search button.",
+      "Copying a note as rich text shows a near-black success toast. The menu is now labeled Copy as Rich Text.",
+      "The mobile system info screen is more compact, and its text stays readable.",
+      "The settings tab for tokens is labeled API / MCP."
     ],
     "zh-CN": [
-      "网页剪藏可以在图片或 X 帖子上右键，把它存成一篇新笔记。",
-      "Web 和桌面端的工作区更安静。设置、对话框、菜单和控件上的装饰绿色改为墨色。品牌绿保留在新建笔记、实心操作、短暂成功提示和未读圆点上。浅色笔记表面比列表浅一档，过重的填充变轻，模板页不再显示两行说明文字。",
-      "Markdown 和富文本的阅读边距对齐。图表和信息图的标题与元信息保持在同一行。菜单和次级页面补齐 14px 与 12px 字号。笔记类型图标和卡片元信息更紧凑，笔记卡片的悬停跟随主题，更多类型和 Beta 标记改用工作区灰色，富文本视图切换改为文档图标。",
-      "手机宽度下，图片会铺满笔记栏。在桌面端保存的宽度（例如 35%）仍保留在笔记里。",
-      "Android 笔记内搜索把输入框、匹配数量，以及上一个、下一个和关闭，放在同一条栏上。"
+      "思维导图和流程图默认使用素简主题，强调色改为中灰。未保存主题的图也按素简显示，所有图的画布都使用笔记编辑器的底色。",
+      "信息图编辑器可以正常打开，更新注册表也不会再导致渲染失败。",
+      "笔记顶栏用 GitHub 链接替换了搜索按钮。",
+      "把笔记复制到公众号或博客后，会看到近黑的成功提示。菜单名称改为「复制到公众号 / 博客」。",
+      "手机上的系统信息页更紧凑，文字保持可读。",
+      "设置里的令牌页签改名为 API / MCP。"
     ],
     "ja": [
-      "Web Clipper は、右クリックした画像または X の投稿を新しいノートとして保存できます。",
-      "Web とデスクトップのワークスペースがより静かになりました。設定、ダイアログ、メニュー、コントロールの装飾的な緑はインク色になります。ブランドの緑は新規ノート、塗りつぶし操作、短い成功表示、未読ドットに残ります。明るいノート面はリストより一段明るく、重い塗りは軽くなり、テンプレートページの説明文 2 行は表示されなくなります。",
-      "Markdown とリッチテキストの読み取り余白が揃います。図とインフォグラフィックのタイトルはメタ情報と同じ行に残ります。メニューと二次ページは 14px と 12px の文字サイズに揃います。ノート種別のアイコンとカードのメタ情報はよりコンパクトになり、ノートカードのホバーはテーマに従い、「その他の種類」と Beta 表示はワークスペースのグレーを使い、リッチテキスト表示の切り替えは文書アイコンになります。",
-      "スマホ幅の画面では、画像がノートの列いっぱいに表示されます。デスクトップで保存した幅（たとえば 35%）はノート内に残ります。",
-      "Android では、ノート内検索の入力欄、一致数、前へ、次へ、閉じるが 1 本のバーに並びます。"
+      "マインドマップとフローチャートの初期テーマを「素」にし、強調色をミディアムグレーにしました。テーマを保存していない図もこの見た目になり、図のキャンバスはノート編集画面の背景色を使います。",
+      "インフォグラフィック編集画面が途中で止まらなくなり、レジストリを更新しても描画に失敗しなくなりました。",
+      "ノート上部の検索ボタンを GitHub リンクに置き換えました。",
+      "書式付きでコピーすると、ほぼ黒の成功表示が出ます。メニュー名は「書式付きコピー」になりました。",
+      "モバイルのシステム情報画面をよりコンパクトにし、文字サイズは読みやすさを保ちました。",
+      "設定のトークンタブの名前を API / MCP に変更しました。"
     ]
   }
 }
